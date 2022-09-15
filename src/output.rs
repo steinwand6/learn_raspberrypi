@@ -24,6 +24,7 @@ pub fn blink_led() -> Result<(), Box<dyn Error>> {
 }
 
 pub fn rgb_led() -> Result<(), Box<dyn Error>> {
+    const COLOR_FLAGS: [u64; 7] = [0b000, 0b100, 0b010, 0b001, 0b110, 0b101, 0b011];
     const GPIO_LED_RED: u8 = 17;
     const GPIO_LED_GREEN: u8 = 18;
     const GPIO_LED_BLUE: u8 = 27;
@@ -41,29 +42,11 @@ pub fn rgb_led() -> Result<(), Box<dyn Error>> {
             Duration::from_micros(palse_width),
         )
     };
-
-    // 最初は周期100*100us, パルス幅0us
-    light_led(&mut pin1, 0)?;
-    light_led(&mut pin2, 0)?;
-    light_led(&mut pin3, 0)?;
-    thread::sleep(Duration::from_millis(500));
-
-    // 赤
-    light_led(&mut pin1, 100)?;
-    light_led(&mut pin2, 0)?;
-    light_led(&mut pin3, 0)?;
-    thread::sleep(Duration::from_millis(500));
-
-    // 緑
-    light_led(&mut pin1, 0)?;
-    light_led(&mut pin2, 100)?;
-    light_led(&mut pin3, 0)?;
-    thread::sleep(Duration::from_millis(500));
-
-    // 青
-    light_led(&mut pin1, 0)?;
-    light_led(&mut pin2, 0)?;
-    light_led(&mut pin3, 100)?;
-    thread::sleep(Duration::from_millis(500));
+    for flags in COLOR_FLAGS {
+        light_led(&mut pin1, (flags & 0b100) * 100)?;
+        light_led(&mut pin2, (flags & 0b010) * 100)?;
+        light_led(&mut pin3, (flags & 0b001) * 100)?;
+        thread::sleep(Duration::from_millis(500));
+    }
     Ok(())
 }
