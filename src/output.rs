@@ -59,15 +59,14 @@ pub fn segment7() -> Result<(), Box<dyn Error>> {
         0x71,
     ];
 
-    const SDI: u8 = 17;
-    const RCLK: u8 = 18;
-    const SRCLK: u8 = 27;
+    const GPO17: u8 = 17;
+    const GPO18: u8 = 18;
+    const GPO27: u8 = 27;
 
-    let mut pin_sdi = Gpio::new()?.get(SDI)?.into_output();
-    let mut pin_rclk = Gpio::new()?.get(RCLK)?.into_output();
-    let mut pin_srclk = Gpio::new()?.get(SRCLK)?.into_output();
+    let mut pin_sdi = Gpio::new()?.get(GPO17)?.into_output();
+    let mut pin_rclk = Gpio::new()?.get(GPO18)?.into_output();
+    let mut pin_srclk = Gpio::new()?.get(GPO27)?.into_output();
 
-    // setup
     pin_sdi.set_low();
     pin_rclk.set_low();
     pin_srclk.set_low();
