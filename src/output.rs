@@ -42,11 +42,58 @@ pub fn rgb_led() -> Result<(), Box<dyn Error>> {
             Duration::from_micros(palse_width),
         )
     };
-    for flags in COLOR_FLAGS {
-        light_led(&mut pin1, (flags & 0b100) * 100)?;
-        light_led(&mut pin2, (flags & 0b010) * 100)?;
-        light_led(&mut pin3, (flags & 0b001) * 100)?;
-        thread::sleep(Duration::from_millis(500));
+    loop {
+        for flags in COLOR_FLAGS {
+            light_led(&mut pin1, (flags & 0b100) * 100)?;
+            light_led(&mut pin2, (flags & 0b010) * 100)?;
+            light_led(&mut pin3, (flags & 0b001) * 100)?;
+            thread::sleep(Duration::from_millis(500));
+        }
     }
+    Ok(())
+}
+
+pub fn segment7() -> Result<(), Box<dyn Error>> {
+    const SEG_CODE: [u8; 16] = [
+        0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07, 0x7f, 0x6f, 0x77, 0x7c, 0x39, 0x5e, 0x79,
+        0x71,
+    ];
+
+    const SDI: u8 = 17;
+    const RCLK: u8 = 18;
+    const SRCLK: u8 = 27;
+
+    let mut pin_sdi = Gpio::new()?.get(SDI)?.into_output();
+    let mut pin_rclk = Gpio::new()?.get(RCLK)?.into_output();
+    let mut pin_srclk = Gpio::new()?.get(SRCLK)?.into_output();
+
+    // setup
+    pin_sdi.set_low();
+    pin_rclk.set_low();
+    pin_srclk.set_low();
+
+    for code in SEG_CODE {
+        for i in 0..8 {
+            if 0x80 & (code << i) != 0 {
+                pin_sdi.set_high();
+            } else {
+                pin_sdi.set_low();
+            }
+            pin_srclk.set_high();
+            thread::sleep(Duration::from_millis(1));
+            pin_srclk.set_low();
+        }
+        pin_rclk.set_high();
+        thread::sleep(Duration::from_millis(1000));
+        pin_rclk.set_low();
+    }
+    for _ in 0..8 {
+        pin_sdi.set_low();
+        pin_srclk.set_high();
+        thread::sleep(Duration::from_millis(1));
+        pin_srclk.set_low();
+    }
+    pin_rclk.set_high();
+    pin_rclk.set_low();
     Ok(())
 }
