@@ -54,6 +54,11 @@ pub fn rgb_led() -> Result<(), Box<dyn Error>> {
 }
 
 pub fn segment7() -> Result<(), Box<dyn Error>> {
+    let turn_high_and_low = |pin: &mut OutputPin, duration: Duration| {
+        pin.set_high();
+        thread::sleep(duration);
+        pin.set_low();
+    };
     const SEG_CODE: [u8; 16] = [
         0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07, 0x7f, 0x6f, 0x77, 0x7c, 0x39, 0x5e, 0x79,
         0x71,
@@ -78,21 +83,14 @@ pub fn segment7() -> Result<(), Box<dyn Error>> {
             } else {
                 pin_sdi.set_low();
             }
-            pin_srclk.set_high();
-            thread::sleep(Duration::from_millis(1));
-            pin_srclk.set_low();
+            turn_high_and_low(&mut pin_srclk, Duration::from_millis(1));
         }
-        pin_rclk.set_high();
-        thread::sleep(Duration::from_millis(1000));
-        pin_rclk.set_low();
+        turn_high_and_low(&mut pin_rclk, Duration::from_millis(1000));
     }
     for _ in 0..8 {
         pin_sdi.set_low();
-        pin_srclk.set_high();
-        thread::sleep(Duration::from_millis(1));
-        pin_srclk.set_low();
+        turn_high_and_low(&mut pin_srclk, Duration::from_millis(1));
     }
-    pin_rclk.set_high();
-    pin_rclk.set_low();
+    turn_high_and_low(&mut pin_rclk, Duration::from_millis(0));
     Ok(())
 }
