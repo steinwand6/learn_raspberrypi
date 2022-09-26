@@ -87,8 +87,8 @@ pub fn segment7() -> Result<(), Box<dyn Error>> {
         }
         turn_high_and_low(&mut pin_rclk, Duration::from_millis(1000));
     }
+    pin_sdi.set_low();
     for _ in 0..8 {
-        pin_sdi.set_low();
         turn_high_and_low(&mut pin_srclk, Duration::from_millis(1));
     }
     turn_high_and_low(&mut pin_rclk, Duration::from_millis(0));
