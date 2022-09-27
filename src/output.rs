@@ -68,7 +68,7 @@ fn turn_high_and_low(pin: &mut OutputPin, duration: Duration) {
 }
 
 pub fn segment7() -> Result<(), Box<dyn Error>> {
-    const SEG_CODE: [u8; 16] = [
+    let SEG_CODE: [u8; 16] = [
         0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07, 0x7f, 0x6f, 0x77, 0x7c, 0x39, 0x5e, 0x79,
         0x71,
     ];
@@ -101,9 +101,7 @@ pub fn segment7() -> Result<(), Box<dyn Error>> {
 }
 
 pub fn four_digit_segment7() -> Result<(), Box<dyn Error>> {
-    // cathode
-
-    const SEG_CODE: [u8; 10] = [0xc0, 0xf9, 0xa4, 0xb0, 0x99, 0x92, 0x82, 0xf8, 0x80, 0x90];
+    let SEG_CODE: [u8; 10] = [0xc0, 0xf9, 0xa4, 0xb0, 0x99, 0x92, 0x82, 0xf8, 0x80, 0x90];
 
     let mut pin_sdi = Gpio::new()?.get(GPIO24)?.into_output();
     let mut pin_rclk = Gpio::new()?.get(GPIO23)?.into_output();
