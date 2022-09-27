@@ -4,4 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+chrono = "0.4.22"
 rppal = { version = "0.13.1", features = ["hal"] }
+timer = "0.2.0"
