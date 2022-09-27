@@ -53,12 +53,13 @@ pub fn rgb_led() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn turn_high_and_low(pin: &mut OutputPin, duration: Duration) {
+    pin.set_high();
+    thread::sleep(duration);
+    pin.set_low();
+}
+
 pub fn segment7() -> Result<(), Box<dyn Error>> {
-    let turn_high_and_low = |pin: &mut OutputPin, duration: Duration| {
-        pin.set_high();
-        thread::sleep(duration);
-        pin.set_low();
-    };
     const SEG_CODE: [u8; 16] = [
         0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07, 0x7f, 0x6f, 0x77, 0x7c, 0x39, 0x5e, 0x79,
         0x71,
@@ -92,5 +93,36 @@ pub fn segment7() -> Result<(), Box<dyn Error>> {
         turn_high_and_low(&mut pin_srclk, Duration::from_millis(1));
     }
     turn_high_and_low(&mut pin_rclk, Duration::from_millis(0));
+    Ok(())
+}
+
+pub fn four_digit_segment7() -> Result<(), Box<dyn Error>> {
+    const GPIO24: u8 = 24;
+    const GPIO23: u8 = 23;
+    const GPIO18: u8 = 18;
+
+    // cathode
+    const SPIMOSI: u8 = 10;
+    const GPIO22: u8 = 22;
+    const GPIO27: u8 = 27;
+    const GPIO17: u8 = 17;
+
+    const SEG_CODE: [u8; 10] = [0xc0, 0xf9, 0xa4, 0xb0, 0x99, 0x92, 0x82, 0xf8, 0x80, 0x90];
+
+    let mut pin_sdi = Gpio::new()?.get(GPIO24)?.into_output();
+    let mut pin_rclk = Gpio::new()?.get(GPIO23)?.into_output();
+    let mut pin_srclk = Gpio::new()?.get(GPIO18)?.into_output();
+
+    let mut place_pins: [OutputPin; 4] = [
+        Gpio::new()?.get(SPIMOSI)?.into_output(),
+        Gpio::new()?.get(GPIO22)?.into_output(),
+        Gpio::new()?.get(GPIO27)?.into_output(),
+        Gpio::new()?.get(GPIO17)?.into_output(),
+    ];
+
+    for p in &mut place_pins {
+        p.set_high();
+    }
+
     Ok(())
 }
