@@ -5,6 +5,14 @@ use std::time::Duration;
 use rppal::gpio::{Gpio, OutputPin};
 use rppal::system::DeviceInfo;
 
+const GPIO24: u8 = 24;
+const GPIO23: u8 = 23;
+const GPIO18: u8 = 18;
+const SPIMOSI: u8 = 10;
+const GPIO22: u8 = 22;
+const GPIO27: u8 = 27;
+const GPIO17: u8 = 17;
+
 pub fn blink_led() -> Result<(), Box<dyn Error>> {
     println!("Blinking an LED on a {}.", DeviceInfo::new()?.model());
 
@@ -65,13 +73,9 @@ pub fn segment7() -> Result<(), Box<dyn Error>> {
         0x71,
     ];
 
-    const GPO17: u8 = 17;
-    const GPO18: u8 = 18;
-    const GPO27: u8 = 27;
-
-    let mut pin_sdi = Gpio::new()?.get(GPO17)?.into_output();
-    let mut pin_rclk = Gpio::new()?.get(GPO18)?.into_output();
-    let mut pin_srclk = Gpio::new()?.get(GPO27)?.into_output();
+    let mut pin_sdi = Gpio::new()?.get(GPIO17)?.into_output();
+    let mut pin_rclk = Gpio::new()?.get(GPIO18)?.into_output();
+    let mut pin_srclk = Gpio::new()?.get(GPIO27)?.into_output();
 
     pin_sdi.set_low();
     pin_rclk.set_low();
@@ -97,15 +101,7 @@ pub fn segment7() -> Result<(), Box<dyn Error>> {
 }
 
 pub fn four_digit_segment7() -> Result<(), Box<dyn Error>> {
-    const GPIO24: u8 = 24;
-    const GPIO23: u8 = 23;
-    const GPIO18: u8 = 18;
-
     // cathode
-    const SPIMOSI: u8 = 10;
-    const GPIO22: u8 = 22;
-    const GPIO27: u8 = 27;
-    const GPIO17: u8 = 17;
 
     const SEG_CODE: [u8; 10] = [0xc0, 0xf9, 0xa4, 0xb0, 0x99, 0x92, 0x82, 0xf8, 0x80, 0x90];
 
