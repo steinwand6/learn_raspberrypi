@@ -151,12 +151,45 @@ pub fn four_digit_segment7() -> Result<(), Box<dyn Error>> {
         Gpio::new()?.get(GPIO17)?.into_output(),
     ];
 
-    for p in &mut place_pins {
-        p.set_high();
-    }
-
-    for code in seg_code {
-        hc595_shift(&mut pin_sdi, &mut pin_rclk, &mut pin_srclk, code);
+    let mut pick_digit = |digit: usize| {
+        for p in &mut place_pins {
+            p.set_low();
+        }
+        place_pins[digit].set_high();
+    };
+    while *count.lock().unwrap() < 10000 {
+        clear_display(&mut pin_sdi, &mut pin_rclk, &mut pin_srclk, false);
+        pick_digit(0);
+        hc595_shift(
+            &mut pin_sdi,
+            &mut pin_rclk,
+            &mut pin_srclk,
+            seg_code[*count.lock().unwrap() % 10],
+        );
+        clear_display(&mut pin_sdi, &mut pin_rclk, &mut pin_srclk, false);
+        pick_digit(1);
+        hc595_shift(
+            &mut pin_sdi,
+            &mut pin_rclk,
+            &mut pin_srclk,
+            seg_code[*count.lock().unwrap() / 10 % 10],
+        );
+        clear_display(&mut pin_sdi, &mut pin_rclk, &mut pin_srclk, false);
+        pick_digit(2);
+        hc595_shift(
+            &mut pin_sdi,
+            &mut pin_rclk,
+            &mut pin_srclk,
+            seg_code[*count.lock().unwrap() / 100 % 10],
+        );
+        clear_display(&mut pin_sdi, &mut pin_rclk, &mut pin_srclk, false);
+        pick_digit(3);
+        hc595_shift(
+            &mut pin_sdi,
+            &mut pin_rclk,
+            &mut pin_srclk,
+            seg_code[*count.lock().unwrap() / 1000 % 10],
+        );
     }
     clear_display(&mut pin_sdi, &mut pin_rclk, &mut pin_srclk, false);
 
