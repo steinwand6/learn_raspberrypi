@@ -157,41 +157,54 @@ pub fn four_digit_segment7() -> Result<(), Box<dyn Error>> {
         }
         place_pins[digit].set_high();
     };
+
+    let mut light_4digit = move |sdi: &mut OutputPin,
+                                 rclk: &mut OutputPin,
+                                 srclk: &mut OutputPin,
+                                 count: usize,
+                                 digit: usize| {
+        let base: i32 = 10;
+        clear_display(sdi, rclk, srclk, false);
+        pick_digit(digit);
+        hc595_shift(
+            sdi,
+            rclk,
+            srclk,
+            seg_code[count / (base.pow(digit as u32) as usize) % 10],
+        );
+    };
+
     while *count.lock().unwrap() < 10000 {
-        clear_display(&mut pin_sdi, &mut pin_rclk, &mut pin_srclk, false);
-        pick_digit(0);
-        hc595_shift(
+        light_4digit(
             &mut pin_sdi,
             &mut pin_rclk,
             &mut pin_srclk,
-            seg_code[*count.lock().unwrap() % 10],
+            *count.lock().unwrap(),
+            0,
         );
-        clear_display(&mut pin_sdi, &mut pin_rclk, &mut pin_srclk, false);
-        pick_digit(1);
-        hc595_shift(
+        light_4digit(
             &mut pin_sdi,
             &mut pin_rclk,
             &mut pin_srclk,
-            seg_code[*count.lock().unwrap() / 10 % 10],
+            *count.lock().unwrap(),
+            1,
         );
-        clear_display(&mut pin_sdi, &mut pin_rclk, &mut pin_srclk, false);
-        pick_digit(2);
-        hc595_shift(
+        light_4digit(
             &mut pin_sdi,
             &mut pin_rclk,
             &mut pin_srclk,
-            seg_code[*count.lock().unwrap() / 100 % 10],
+            *count.lock().unwrap(),
+            2,
         );
-        clear_display(&mut pin_sdi, &mut pin_rclk, &mut pin_srclk, false);
-        pick_digit(3);
-        hc595_shift(
+        light_4digit(
             &mut pin_sdi,
             &mut pin_rclk,
             &mut pin_srclk,
-            seg_code[*count.lock().unwrap() / 1000 % 10],
+            *count.lock().unwrap(),
+            3,
         );
     }
     clear_display(&mut pin_sdi, &mut pin_rclk, &mut pin_srclk, false);
-
+    drop(guard);
     Ok(())
 }
