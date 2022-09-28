@@ -158,7 +158,7 @@ pub fn four_digit_segment7() -> Result<(), Box<dyn Error>> {
         place_pins[digit].set_high();
     };
 
-    let mut light_4digit = |count: usize, digit: usize| {
+    let mut light_1digit = |count: usize, digit: usize| {
         let base: i32 = 10;
         clear_display(&mut pin_sdi, &mut pin_rclk, &mut pin_srclk, false);
         pick_digit(digit);
@@ -171,10 +171,10 @@ pub fn four_digit_segment7() -> Result<(), Box<dyn Error>> {
     };
 
     while *count.lock().unwrap() < 10000 {
-        light_4digit(*count.lock().unwrap(), 0);
-        light_4digit(*count.lock().unwrap(), 1);
-        light_4digit(*count.lock().unwrap(), 2);
-        light_4digit(*count.lock().unwrap(), 3);
+        light_1digit(*count.lock().unwrap(), 0);
+        light_1digit(*count.lock().unwrap(), 1);
+        light_1digit(*count.lock().unwrap(), 2);
+        light_1digit(*count.lock().unwrap(), 3);
     }
     clear_display(&mut pin_sdi, &mut pin_rclk, &mut pin_srclk, false);
     drop(guard);
