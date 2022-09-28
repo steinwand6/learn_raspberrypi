@@ -103,13 +103,13 @@ fn clear_display(sdi: &mut OutputPin, rclk: &mut OutputPin, srclk: &mut OutputPi
     if is_anode {
         sdi.set_low();
         for _ in 0..8 {
-            turn_high_and_low(srclk, Duration::from_millis(1));
+            turn_high_and_low(srclk, Duration::from_millis(0));
         }
         turn_high_and_low(rclk, Duration::from_millis(0));
     } else {
         sdi.set_high();
         for _ in 0..8 {
-            turn_high_and_low(srclk, Duration::from_millis(1));
+            turn_high_and_low(srclk, Duration::from_millis(0));
         }
         turn_high_and_low(rclk, Duration::from_millis(0));
     }
@@ -122,9 +122,9 @@ fn hc595_shift(sdi: &mut OutputPin, rclk: &mut OutputPin, srclk: &mut OutputPin,
         } else {
             sdi.set_low();
         }
-        turn_high_and_low(srclk, Duration::from_millis(1));
+        turn_high_and_low(srclk, Duration::from_millis(0));
     }
-    turn_high_and_low(rclk, Duration::from_millis(1000));
+    turn_high_and_low(rclk, Duration::from_millis(0));
 }
 
 pub fn four_digit_segment7() -> Result<(), Box<dyn Error>> {
