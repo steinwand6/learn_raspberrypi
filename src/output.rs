@@ -95,12 +95,24 @@ pub fn segment7() -> Result<(), Box<dyn Error>> {
         }
         turn_high_and_low(&mut pin_rclk, Duration::from_millis(1000));
     }
-    pin_sdi.set_low();
-    for _ in 0..8 {
-        turn_high_and_low(&mut pin_srclk, Duration::from_millis(1));
-    }
-    turn_high_and_low(&mut pin_rclk, Duration::from_millis(0));
+    clear_display(&mut pin_sdi, &mut pin_rclk, &mut pin_srclk, true);
     Ok(())
+}
+
+fn clear_display(sdi: &mut OutputPin, rclk: &mut OutputPin, srclk: &mut OutputPin, is_anode: bool) {
+    if is_anode {
+        sdi.set_low();
+        for _ in 0..8 {
+            turn_high_and_low(srclk, Duration::from_millis(1));
+        }
+        turn_high_and_low(rclk, Duration::from_millis(0));
+    } else {
+        sdi.set_high();
+        for _ in 0..8 {
+            turn_high_and_low(srclk, Duration::from_millis(1));
+        }
+        turn_high_and_low(rclk, Duration::from_millis(0));
+    }
 }
 
 pub fn four_digit_segment7() -> Result<(), Box<dyn Error>> {
@@ -142,11 +154,7 @@ pub fn four_digit_segment7() -> Result<(), Box<dyn Error>> {
         }
         turn_high_and_low(&mut pin_rclk, Duration::from_millis(1000));
     }
-    pin_sdi.set_high();
-    for _ in 0..8 {
-        turn_high_and_low(&mut pin_srclk, Duration::from_millis(1));
-    }
-    turn_high_and_low(&mut pin_rclk, Duration::from_millis(0));
+    clear_display(&mut pin_sdi, &mut pin_rclk, &mut pin_srclk, false);
 
     Ok(())
 }
