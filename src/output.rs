@@ -115,6 +115,18 @@ fn clear_display(sdi: &mut OutputPin, rclk: &mut OutputPin, srclk: &mut OutputPi
     }
 }
 
+fn hc595_shift(sdi: &mut OutputPin, rclk: &mut OutputPin, srclk: &mut OutputPin, code: u8) {
+    for i in 0..8 {
+        if 0x80 & (code << i) != 0 {
+            sdi.set_high();
+        } else {
+            sdi.set_low();
+        }
+        turn_high_and_low(srclk, Duration::from_millis(1));
+    }
+    turn_high_and_low(rclk, Duration::from_millis(1000));
+}
+
 pub fn four_digit_segment7() -> Result<(), Box<dyn Error>> {
     let timer = timer::Timer::new();
     let count = Arc::new(Mutex::new(0));
@@ -144,15 +156,7 @@ pub fn four_digit_segment7() -> Result<(), Box<dyn Error>> {
     }
 
     for code in seg_code {
-        for i in 0..8 {
-            if 0x80 & (code << i) != 0 {
-                pin_sdi.set_high();
-            } else {
-                pin_sdi.set_low();
-            }
-            turn_high_and_low(&mut pin_srclk, Duration::from_millis(1));
-        }
-        turn_high_and_low(&mut pin_rclk, Duration::from_millis(1000));
+        hc595_shift(&mut pin_sdi, &mut pin_rclk, &mut pin_srclk, code);
     }
     clear_display(&mut pin_sdi, &mut pin_rclk, &mut pin_srclk, false);
 
