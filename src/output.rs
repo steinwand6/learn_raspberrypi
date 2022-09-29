@@ -102,17 +102,13 @@ pub fn segment7() -> Result<(), Box<dyn Error>> {
 fn clear_display(sdi: &mut OutputPin, rclk: &mut OutputPin, srclk: &mut OutputPin, is_anode: bool) {
     if is_anode {
         sdi.set_low();
-        for _ in 0..8 {
-            turn_high_and_low(srclk, Duration::from_millis(0));
-        }
-        turn_high_and_low(rclk, Duration::from_millis(0));
     } else {
         sdi.set_high();
-        for _ in 0..8 {
-            turn_high_and_low(srclk, Duration::from_millis(0));
-        }
-        turn_high_and_low(rclk, Duration::from_millis(0));
     }
+    for _ in 0..8 {
+        turn_high_and_low(srclk, Duration::from_millis(0));
+    }
+    turn_high_and_low(rclk, Duration::from_millis(0));
 }
 
 fn hc595_shift(sdi: &mut OutputPin, rclk: &mut OutputPin, srclk: &mut OutputPin, code: u8) {
@@ -133,7 +129,7 @@ pub fn four_digit_segment7() -> Result<(), Box<dyn Error>> {
 
     let guard = {
         let count = count.clone();
-        timer.schedule_repeating(chrono::Duration::seconds(1), move || {
+        timer.schedule_repeating(chrono::Duration::milliseconds(100), move || {
             *count.lock().unwrap() += 1;
         })
     };
