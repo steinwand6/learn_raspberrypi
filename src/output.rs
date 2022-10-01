@@ -1,9 +1,8 @@
 use std::error::Error;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
-
-use timer::Timer;
 
 use rppal::gpio::{Gpio, OutputPin};
 use rppal::system::DeviceInfo;
@@ -165,7 +164,6 @@ pub fn four_digit_segment7() -> Result<(), Box<dyn Error>> {
             seg_code[count / (base.pow(digit as u32) as usize) % 10],
         );
     };
-
     while *count.lock().unwrap() < 10000 {
         light_1digit(*count.lock().unwrap(), 0);
         light_1digit(*count.lock().unwrap(), 1);
@@ -174,5 +172,57 @@ pub fn four_digit_segment7() -> Result<(), Box<dyn Error>> {
     }
     clear_display(&mut pin_sdi, &mut pin_rclk, &mut pin_srclk, false);
     drop(guard);
+    Ok(())
+}
+
+fn hc595_in(sdi: &mut OutputPin, srclk: &mut OutputPin, code: u8) {
+    for i in 0..8 {
+        if 0x80 & (code << i) != 0 {
+            sdi.set_high();
+        } else {
+            sdi.set_low();
+        }
+        turn_high_and_low(srclk, Duration::from_millis(0));
+    }
+}
+
+fn hc595_out(rclk: &mut OutputPin) {
+    turn_high_and_low(rclk, Duration::from_millis(0));
+}
+
+pub fn light_led_dot_matrix() -> Result<(), Box<dyn Error>> {
+    let code_h: [u8; 20] = [
+        0x01, 0xff, 0x80, 0xff, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff, 0xff,
+    ];
+    let code_l: [u8; 20] = [
+        0x00, 0x7f, 0x00, 0xfe, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfe, 0xfd, 0xfb,
+        0xf7, 0xef, 0xdf, 0xbf, 0x7f,
+    ];
+    let mut pin_sdi = Gpio::new()?.get(GPIO17)?.into_output();
+    let mut pin_rclk = Gpio::new()?.get(GPIO18)?.into_output();
+    let mut pin_srclk = Gpio::new()?.get(GPIO27)?.into_output();
+
+    let running = Arc::new(AtomicBool::new(true));
+    let r = running.clone();
+    ctrlc::set_handler(move || {
+        r.store(false, Ordering::SeqCst);
+    })
+    .expect("Error setting Ctrl-C handler");
+    while running.load(Ordering::SeqCst) {
+        for i in 0..code_h.len() {
+            hc595_in(&mut pin_sdi, &mut pin_srclk, code_l[i]);
+            hc595_in(&mut pin_sdi, &mut pin_srclk, code_h[i]);
+            hc595_out(&mut pin_rclk);
+            thread::sleep(Duration::from_millis(100));
+        }
+        for i in (0..code_h.len()).rev() {
+            hc595_in(&mut pin_sdi, &mut pin_srclk, code_l[i]);
+            hc595_in(&mut pin_sdi, &mut pin_srclk, code_h[i]);
+            hc595_out(&mut pin_rclk);
+            thread::sleep(Duration::from_millis(100));
+        }
+    }
+    clear_display(&mut pin_sdi, &mut pin_rclk, &mut pin_srclk, true);
     Ok(())
 }

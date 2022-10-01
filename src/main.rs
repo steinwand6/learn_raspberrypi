@@ -2,5 +2,5 @@ pub mod output;
 use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    output::segment7()
+    output::light_led_dot_matrix()
 }
