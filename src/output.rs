@@ -226,3 +226,23 @@ pub fn light_led_dot_matrix() -> Result<(), Box<dyn Error>> {
     clear_display(&mut pin_sdi, &mut pin_rclk, &mut pin_srclk, true);
     Ok(())
 }
+
+pub fn beep_active_buzzer() -> Result<(), Box<dyn Error>> {
+    let mut beep_pin = Gpio::new()?.get(GPIO17)?.into_output();
+
+    let running = Arc::new(AtomicBool::new(true));
+    let r = running.clone();
+    ctrlc::set_handler(move || {
+        r.store(false, Ordering::SeqCst);
+    })
+    .expect("Error setting Ctrl-C handler");
+
+    while running.load(Ordering::SeqCst) {
+        beep_pin.set_low();
+        thread::sleep(Duration::from_millis(100));
+        beep_pin.set_high();
+        thread::sleep(Duration::from_millis(10));
+    }
+    beep_pin.set_high();
+    Ok(())
+}
