@@ -246,3 +246,120 @@ pub fn beep_active_buzzer() -> Result<(), Box<dyn Error>> {
     beep_pin.set_high();
     Ok(())
 }
+
+pub fn beep_passive_buzzer() -> Result<(), Box<dyn Error>> {
+    struct CDEFGAB {
+        c: f64,
+        d: f64,
+        e: f64,
+        f: f64,
+        g: f64,
+        a: f64,
+        b: f64,
+    }
+    const L_TONE: CDEFGAB = CDEFGAB {
+        c: 130.813,
+        d: 146.832,
+        e: 164.814,
+        f: 174.614,
+        g: 195.998,
+        a: 220.0,
+        b: 246.942,
+    };
+    const M_TONE: CDEFGAB = CDEFGAB {
+        c: 261.626,
+        d: 293.665,
+        e: 329.628,
+        f: 349.228,
+        g: 391.995,
+        a: 440.0,
+        b: 493.883,
+    };
+    const H_TONE: CDEFGAB = CDEFGAB {
+        c: 523.251,
+        d: 587.33,
+        e: 659.255,
+        f: 698.456,
+        g: 783.991,
+        a: 880.0,
+        b: 987.767,
+    };
+
+    // Retrieve the GPIO pin and configure it as an output.
+    let mut beep_pin = Gpio::new()?.get(GPIO17)?.into_output();
+
+    let mut beep = |tone: f64, duty_cycle: f64, millis: u64| {
+        let _ = beep_pin.set_pwm_frequency(tone, duty_cycle);
+        thread::sleep(Duration::from_millis(millis));
+    };
+
+    for i in 0..3 {
+        // ときめく
+        beep(M_TONE.b, 0.1, 500);
+        beep(H_TONE.d, 0.1, 500);
+        beep(M_TONE.a, 0.1, 500);
+        beep(M_TONE.b, 0.1, 500);
+        // こころの
+        beep(M_TONE.a, 0.1, 500);
+        beep(H_TONE.d, 0.1, 500);
+        beep(H_TONE.d, 0.1, 480);
+        beep(H_TONE.d, 0.0, 20);
+        beep(H_TONE.e, 0.1, 500);
+        if i == 0 {
+            // もーしょん
+            beep(739.938, 0.1, 500);
+            beep(H_TONE.d, 0.1, 500);
+            beep(M_TONE.b, 0.1, 500);
+            beep(M_TONE.a, 0.1, 480);
+            beep(M_TONE.a, 0.0, 20);
+            // が
+            beep(M_TONE.a, 0.1, 500);
+            beep(M_TONE.a, 0.0, 1500);
+        } else if i == 1 {
+            // やまない
+            beep(H_TONE.d, 0.1, 500);
+            beep(H_TONE.e, 0.1, 500);
+            beep(H_TONE.a, 0.1, 750);
+            beep(H_TONE.a, 0.0, 250);
+            // の
+            beep(H_TONE.d, 0.1, 1000);
+            beep(H_TONE.d, 0.0, 1000);
+        } else {
+            // プログラ
+            beep(739.938, 0.1, 500);
+            beep(H_TONE.d, 0.1, 500);
+            beep(M_TONE.b, 0.1, 500);
+            beep(M_TONE.a, 0.1, 480);
+            beep(H_TONE.a, 0.0, 20);
+            // ム しりた
+            beep(M_TONE.a, 0.1, 480);
+            beep(H_TONE.a, 0.0, 20);
+            beep(M_TONE.a, 0.0, 500);
+            beep(M_TONE.a, 0.1, 250);
+            beep(M_TONE.b, 0.1, 250);
+            beep(M_TONE.b, 0.0, 250);
+            beep(H_TONE.d, 0.1, 250);
+            // い しりた
+            beep(H_TONE.d, 0.1, 500);
+            beep(H_TONE.d, 0.0, 500);
+            beep(M_TONE.a, 0.1, 250);
+            beep(M_TONE.b, 0.1, 250);
+            beep(M_TONE.b, 0.0, 250);
+            beep(H_TONE.d, 0.1, 250);
+            // い ねえもっと
+            beep(H_TONE.d, 0.1, 250);
+            beep(M_TONE.b, 0.0, 250);
+            beep(M_TONE.a, 0.0, 500);
+            beep(739.938, 0.1, 500);
+            beep(H_TONE.d, 0.1, 500);
+            // つきあって
+            beep(H_TONE.d, 0.1, 500);
+            beep(M_TONE.a, 0.1, 500);
+            beep(H_TONE.e, 0.1, 750);
+            beep(H_TONE.e, 0.08, 250);
+            beep(H_TONE.d, 0.1, 500);
+        }
+    }
+
+    Ok(())
+}
