@@ -357,9 +357,40 @@ pub fn beep_passive_buzzer() -> Result<(), Box<dyn Error>> {
             beep(M_TONE.a, 0.1, 500);
             beep(H_TONE.e, 0.1, 750);
             beep(H_TONE.e, 0.08, 250);
+            beep(H_TONE.d, 0.1, 1000);
+        }
+    }
+    beep(H_TONE.d, 0.0, 1000);
+    for i in 0..4 {
+        // ダンスロボットダンス
+        beep(H_TONE.d, 0.1, 200);
+        beep(H_TONE.d, 0.0, 550);
+        beep(H_TONE.d, 0.1, 230);
+        beep(H_TONE.d, 0.01, 20);
+        beep(H_TONE.d, 0.1, 200);
+        beep(H_TONE.d, 0.0, 300);
+        beep(554.365, 0.1, 250);
+        beep(H_TONE.d, 0.1, 250);
+        if i == 0 || i == 2 {
+            beep(M_TONE.a, 0.0, 500);
+            beep(M_TONE.a, 0.1, 500);
+            beep(739.938, 0.1, 500);
+            beep(H_TONE.d, 0.1, 450);
+            beep(H_TONE.d, 0.0, 50);
+        } else if i == 1 {
+            beep(M_TONE.a, 0.0, 500);
+            beep(H_TONE.d, 0.1, 500);
+            beep(H_TONE.e, 0.1, 230);
+            beep(H_TONE.e, 0.05, 20);
+            beep(H_TONE.d, 0.1, 450);
+            beep(H_TONE.d, 0.0, 50);
+        } else {
+            beep(H_TONE.d, 0.0, 500);
+            beep(H_TONE.d, 0.1, 500);
+            beep(H_TONE.a, 0.1, 250);
+            beep(H_TONE.a, 0.0, 250);
             beep(H_TONE.d, 0.1, 500);
         }
     }
-
     Ok(())
 }
