@@ -394,3 +394,19 @@ pub fn beep_passive_buzzer() -> Result<(), Box<dyn Error>> {
     }
     Ok(())
 }
+
+pub fn motor() -> Result<(), Box<dyn Error>> {
+    let mut pin_en1 = Gpio::new()?.get(GPIO22)?.into_output();
+    let mut pin_1a = Gpio::new()?.get(GPIO27)?.into_output();
+    let mut pin_2a = Gpio::new()?.get(GPIO17)?.into_output();
+
+    pin_en1.set_high();
+    pin_1a.set_high();
+    pin_2a.set_low();
+    thread::sleep(Duration::from_secs(3));
+    pin_2a.set_high();
+    thread::sleep(Duration::from_secs(3));
+    pin_1a.set_low();
+    thread::sleep(Duration::from_secs(3));
+    Ok(())
+}
