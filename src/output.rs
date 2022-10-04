@@ -410,3 +410,21 @@ pub fn motor() -> Result<(), Box<dyn Error>> {
     thread::sleep(Duration::from_secs(3));
     Ok(())
 }
+
+pub fn servomotor() -> Result<(), Box<dyn Error>> {
+    const PERIOD_MS: u64 = 20;
+    const PULSE_MIN_US: u64 = 500;
+    const PULSE_NEUTRAL_US: u64 = 1500;
+    const PULSE_MAX_US: u64 = 2500;
+
+    let mut pin_servo = Gpio::new()?.get(GPIO18)?.into_output();
+    for i in PULSE_NEUTRAL_US..PULSE_MAX_US {
+        pin_servo.set_pwm(Duration::from_millis(PERIOD_MS), Duration::from_micros(i))?;
+        thread::sleep(Duration::from_millis(10));
+    }
+    for i in (PULSE_MIN_US..PULSE_NEUTRAL_US).rev() {
+        pin_servo.set_pwm(Duration::from_millis(PERIOD_MS), Duration::from_micros(i))?;
+        thread::sleep(Duration::from_millis(10));
+    }
+    Ok(())
+}
