@@ -422,9 +422,32 @@ pub fn servomotor() -> Result<(), Box<dyn Error>> {
         pin_servo.set_pwm(Duration::from_millis(PERIOD_MS), Duration::from_micros(i))?;
         thread::sleep(Duration::from_millis(10));
     }
-    for i in (PULSE_MIN_US..PULSE_NEUTRAL_US).rev() {
+    for i in PULSE_MIN_US..PULSE_NEUTRAL_US {
         pin_servo.set_pwm(Duration::from_millis(PERIOD_MS), Duration::from_micros(i))?;
         thread::sleep(Duration::from_millis(10));
     }
+    Ok(())
+}
+
+pub fn relay() -> Result<(), Box<dyn Error>> {
+    let mut base_pin = Gpio::new()?.get(GPIO17)?.into_output();
+
+    let running = Arc::new(AtomicBool::new(true));
+    let r = running.clone();
+    ctrlc::set_handler(move || {
+        r.store(false, Ordering::SeqCst);
+    })
+    .expect("Error setting Ctrl-C handler");
+
+    while running.load(Ordering::SeqCst) {
+        println!("Relay Open");
+        base_pin.set_low();
+        thread::sleep(Duration::from_secs(1));
+        println!("Relay Close");
+        base_pin.set_high();
+        thread::sleep(Duration::from_secs(1));
+    }
+    println!("Relay Close");
+    base_pin.set_high();
     Ok(())
 }
