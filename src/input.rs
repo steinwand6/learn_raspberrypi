@@ -1,5 +1,4 @@
-use rppal::gpio::{Gpio, OutputPin};
-use rppal::system::DeviceInfo;
+use rppal::gpio::Gpio;
 use std::error::Error;
 
 const GPIO24: u8 = 24;
@@ -12,16 +11,17 @@ const GPIO17: u8 = 17;
 const GPIO25: u8 = 25;
 
 pub fn button() -> Result<(), Box<dyn Error>> {
-    let input = Gpio::new()?.get(GPIO18)?.into_input();
+    let mut input = Gpio::new()?.get(GPIO18)?.into_input();
     let mut output = Gpio::new()?.get(GPIO17)?.into_output();
-    let mut count = 0;
-    while count < 5 {
-        if input.is_high() {
-            output.set_low();
-            count += 1
-        } else {
-            output.set_high();
+
+    output.set_high();
+    input
+        .set_interrupt(rppal::gpio::Trigger::FallingEdge)
+        .expect("failed to set_interrupt.");
+    loop {
+        match input.poll_interrupt(true, None) {
+            Ok(_) => output.toggle(),
+            Err(e) => println!("{}", e),
         }
     }
-    Ok(())
 }
