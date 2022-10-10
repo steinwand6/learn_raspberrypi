@@ -14,6 +14,7 @@ const SPIMOSI: u8 = 10;
 const GPIO22: u8 = 22;
 const GPIO27: u8 = 27;
 const GPIO17: u8 = 17;
+const GPIO25: u8 = 25;
 
 pub fn blink_led() -> Result<(), Box<dyn Error>> {
     println!("Blinking an LED on a {}.", DeviceInfo::new()?.model());
@@ -450,4 +451,48 @@ pub fn relay() -> Result<(), Box<dyn Error>> {
     println!("Relay Close");
     base_pin.set_high();
     Ok(())
+}
+
+pub fn stepper_motor() -> Result<(), Box<dyn Error>> {
+    let mut pins = [
+        Gpio::new()?.get(GPIO18)?.into_output(),
+        Gpio::new()?.get(GPIO23)?.into_output(),
+        Gpio::new()?.get(GPIO24)?.into_output(),
+        Gpio::new()?.get(GPIO25)?.into_output(),
+    ];
+    let one_step = [
+        [true, false, false, false],
+        [false, true, false, false],
+        [false, false, true, false],
+        [false, false, false, true],
+    ];
+    let two_step = [
+        [true, true, false, false],
+        [false, true, true, false],
+        [false, false, true, true],
+        [true, false, false, true],
+    ];
+    let half_step = [
+        [true, false, false, false],
+        [true, true, false, false],
+        [false, true, false, false],
+        [false, true, true, false],
+        [false, false, true, false],
+        [false, false, true, true],
+        [false, false, false, true],
+        [true, false, false, true],
+    ];
+
+    loop {
+        for step in half_step {
+            for i in 0..4 {
+                if step[i] {
+                    pins[i].set_high();
+                } else {
+                    pins[i].set_low();
+                }
+                thread::sleep(Duration::from_micros(1000));
+            }
+        }
+    }
 }
