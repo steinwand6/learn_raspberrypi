@@ -1,3 +1,4 @@
+pub mod input;
 pub mod output;
 use std::error::Error;
 
