@@ -30,19 +30,27 @@ pub fn button() -> Result<(), Box<dyn Error>> {
 pub fn slide_button() -> Result<(), Box<dyn Error>> {
     let mut led_1 = Gpio::new()?.get(GPIO22)?.into_output();
     let mut led_2 = Gpio::new()?.get(GPIO27)?.into_output();
-    let input_pin = Gpio::new()?.get(GPIO17)?.into_input();
+    let mut input_pin = Gpio::new()?.get(GPIO17)?.into_input();
+
+    if input_pin.is_low() {
+        led_1.set_low();
+        led_2.set_high();
+    } else {
+        led_2.set_high();
+        led_1.set_high();
+    }
+
+    input_pin
+        .set_interrupt(rppal::gpio::Trigger::Both)
+        .expect("failed to set_interrupt.");
 
     loop {
-        if input_pin.is_high() {
-            led_1.set_low();
-            led_2.set_high();
-            println!("LED1 on");
-            thread::sleep(Duration::from_secs(1));
-        } else {
-            led_2.set_low();
-            led_1.set_high();
-            println!("LED2 on");
-            thread::sleep(Duration::from_secs(1));
+        match input_pin.poll_interrupt(true, None) {
+            Ok(_) => {
+                led_1.toggle();
+                led_2.toggle();
+            }
+            Err(e) => println!("{}", e),
         }
     }
 }
