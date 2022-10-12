@@ -1,5 +1,6 @@
-use rppal::gpio::Gpio;
-use std::error::Error;
+use rppal::gpio::{Gpio, OutputPin};
+use std::time::Duration;
+use std::{error::Error, thread};
 
 const GPIO24: u8 = 24;
 const GPIO23: u8 = 23;
@@ -22,6 +23,26 @@ pub fn button() -> Result<(), Box<dyn Error>> {
         match input.poll_interrupt(true, None) {
             Ok(_) => output.toggle(),
             Err(e) => println!("{}", e),
+        }
+    }
+}
+
+pub fn slide_button() -> Result<(), Box<dyn Error>> {
+    let mut led_1 = Gpio::new()?.get(GPIO22)?.into_output();
+    let mut led_2 = Gpio::new()?.get(GPIO27)?.into_output();
+    let input_pin = Gpio::new()?.get(GPIO17)?.into_input();
+
+    loop {
+        if input_pin.is_high() {
+            led_1.set_low();
+            led_2.set_high();
+            println!("LED1 on");
+            thread::sleep(Duration::from_secs(1));
+        } else {
+            led_2.set_low();
+            led_1.set_high();
+            println!("LED2 on");
+            thread::sleep(Duration::from_secs(1));
         }
     }
 }
