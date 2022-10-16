@@ -1,4 +1,4 @@
-use rppal::gpio::{Gpio, OutputPin};
+use rppal::gpio::{Gpio, InputPin, OutputPin};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
@@ -96,4 +96,75 @@ pub fn tilt() -> Result<(), Box<dyn Error>> {
     led_1.set_low();
     led_2.set_low();
     Ok(())
+}
+
+fn snd_bit(clk_pin: &mut OutputPin, input_pin: &mut OutputPin, value: u8) {
+    clk_pin.set_low();
+    thread::sleep(Duration::from_micros(2));
+    if value == 0 {
+        input_pin.set_low();
+    } else {
+        input_pin.set_high();
+    }
+    clk_pin.set_high();
+    thread::sleep(Duration::from_micros(2));
+}
+
+fn rcv_bit(clk_pin: &mut OutputPin, output_pin: &mut InputPin) -> u8 {
+    let result;
+    clk_pin.set_low();
+    thread::sleep(Duration::from_micros(2));
+    if output_pin.is_high() {
+        result = 1;
+    } else {
+        result = 0;
+    }
+    clk_pin.set_high();
+    thread::sleep(Duration::from_micros(2));
+    return result;
+}
+
+pub fn potentiometer() -> Result<(), Box<dyn Error>> {
+    let mut msb = 0;
+    let mut lsb = 0;
+
+    let mut adc_cs = Gpio::new()?.get(GPIO17)?.into_output();
+    let mut adc_do = Gpio::new()?.get(GPIO23)?.into_input();
+    let mut adc_di = Gpio::new()?.get(GPIO27)?.into_output();
+    let mut adc_clk = Gpio::new()?.get(GPIO18)?.into_output();
+    let mut led = Gpio::new()?.get(GPIO22)?.into_output();
+
+    loop {
+        // 変換の開始
+        adc_cs.set_low();
+        // スタートビット
+        snd_bit(&mut adc_clk, &mut adc_di, 1);
+        // SGL
+        snd_bit(&mut adc_clk, &mut adc_di, 1);
+        // ODD
+        snd_bit(&mut adc_clk, &mut adc_di, 1);
+        // Select
+        snd_bit(&mut adc_clk, &mut adc_di, 0);
+
+        // スカされるbit。送信する値に意味なし。
+        snd_bit(&mut adc_clk, &mut adc_di, 0);
+        for _ in 0..7 {
+            msb = msb << 1 | rcv_bit(&mut adc_clk, &mut adc_do);
+        }
+
+        adc_clk.set_low();
+        thread::sleep(Duration::from_micros(2));
+        msb = msb << 1 | if adc_do.is_high() { 1 } else { 0 };
+        lsb = if adc_do.is_high() { 1 } else { 0 };
+        adc_clk.set_high();
+
+        for i in 1..8 {
+            lsb = rcv_bit(&mut adc_clk, &mut adc_do) << i | lsb;
+        }
+        // 変換の終了
+        adc_cs.set_high();
+        if msb == lsb {
+            led.set_pwm_frequency(2000.0, (msb as f64) / 255.0)?;
+        }
+    }
 }
