@@ -147,24 +147,67 @@ pub fn potentiometer() -> Result<(), Box<dyn Error>> {
         snd_bit(&mut adc_clk, &mut adc_di, 0);
 
         // スカされるbit。送信する値に意味なし。
-        snd_bit(&mut adc_clk, &mut adc_di, 0);
+        snd_bit(&mut adc_clk, &mut adc_di, 1);
+
+        // MSB-First Data
         for _ in 0..7 {
             msb = msb << 1 | rcv_bit(&mut adc_clk, &mut adc_do);
         }
-
+        // MSB-First DataとLSB-First Dataの最下位bit
         adc_clk.set_low();
         thread::sleep(Duration::from_micros(2));
         msb = msb << 1 | if adc_do.is_high() { 1 } else { 0 };
         lsb = if adc_do.is_high() { 1 } else { 0 };
         adc_clk.set_high();
-
+        // LSB-First Data
         for i in 1..8 {
             lsb = rcv_bit(&mut adc_clk, &mut adc_do) << i | lsb;
         }
         // 変換の終了
         adc_cs.set_high();
+        // LED点灯
         if msb == lsb {
             led.set_pwm_frequency(2000.0, (msb as f64) / 255.0)?;
         }
+    }
+}
+
+pub fn keypad() -> Result<(), Box<dyn Error>> {
+    const KEYS: [char; 16] = [
+        '1', '2', '3', 'A', '4', '5', '6', 'B', '7', '8', '9', 'C', '*', '0', '#', 'D',
+    ];
+    let row = [GPIO18, GPIO23, GPIO24, GPIO25];
+    let col = [SPIMOSI, GPIO22, GPIO27, GPIO17];
+    let mut row_pins = row
+        .map(|pin| -> Result<OutputPin, Box<dyn Error>> {
+            Ok(Gpio::new()?.get(pin)?.into_output())
+        })
+        .map(|result: Result<OutputPin, Box<dyn Error>>| result.unwrap());
+    let col_pins = col
+        .map(|pin| -> Result<InputPin, Box<dyn Error>> { Ok(Gpio::new()?.get(pin)?.into_input()) })
+        .map(|result: Result<InputPin, Box<dyn Error>>| result.unwrap());
+
+    let mut count;
+    let mut pressed_key: [char; 4] = [' '; 4];
+    let mut last_pressed_key: [char; 4] = [' '; 4];
+    loop {
+        count = 0;
+        for (i, output) in &mut row_pins.iter_mut().enumerate() {
+            output.set_high();
+            for (j, input) in col_pins.iter().enumerate() {
+                if input.is_high() {
+                    pressed_key[count] = KEYS[i * 4 + j];
+                    count += 1;
+                }
+            }
+            thread::sleep(Duration::from_millis(1));
+            output.set_low();
+        }
+        for i in 0..pressed_key.len() {
+            if pressed_key[i] != last_pressed_key[i] {
+                println!("[{}]", pressed_key[i]);
+            }
+        }
+        last_pressed_key.copy_from_slice(pressed_key.as_slice());
     }
 }
