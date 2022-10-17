@@ -1,4 +1,5 @@
 use rppal::gpio::{Gpio, InputPin, OutputPin};
+use std::collections::HashSet;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
@@ -187,27 +188,24 @@ pub fn keypad() -> Result<(), Box<dyn Error>> {
         .map(|pin| -> Result<InputPin, Box<dyn Error>> { Ok(Gpio::new()?.get(pin)?.into_input()) })
         .map(|result: Result<InputPin, Box<dyn Error>>| result.unwrap());
 
-    let mut count;
-    let mut pressed_key: [char; 4] = [' '; 4];
-    let mut last_pressed_key: [char; 4] = [' '; 4];
+    let mut pressed: HashSet<char> = vec![].into_iter().collect();
+    let mut last_pressed: HashSet<char> = vec![].into_iter().collect();
     loop {
-        count = 0;
         for (i, output) in &mut row_pins.iter_mut().enumerate() {
             output.set_high();
             for (j, input) in col_pins.iter().enumerate() {
                 if input.is_high() {
-                    pressed_key[count] = KEYS[i * 4 + j];
-                    count += 1;
+                    pressed.insert(KEYS[i * 4 + j]);
                 }
             }
             thread::sleep(Duration::from_millis(1));
             output.set_low();
         }
-        for i in 0..pressed_key.len() {
-            if pressed_key[i] != last_pressed_key[i] {
-                println!("[{}]", pressed_key[i]);
-            }
+        if pressed.difference(&last_pressed).collect::<Vec<_>>().len() != 0 {
+            println!("{:?}", pressed.difference(&last_pressed));
         }
-        last_pressed_key.copy_from_slice(pressed_key.as_slice());
+        last_pressed.clone_from(&pressed);
+        pressed.clear();
+        thread::sleep(Duration::from_millis(100));
     }
 }
