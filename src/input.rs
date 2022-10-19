@@ -209,3 +209,89 @@ pub fn keypad() -> Result<(), Box<dyn Error>> {
         thread::sleep(Duration::from_millis(100));
     }
 }
+
+struct Adc0834 {
+    adc_cs: u8,
+    adc_do: u8,
+    adc_di: u8,
+    adc_clk: u8,
+}
+
+impl Adc0834 {
+    fn new(adc_cs: u8, adc_do: u8, adc_di: u8, adc_clk: u8) -> Self {
+        Self {
+            adc_cs,
+            adc_do,
+            adc_di,
+            adc_clk,
+        }
+    }
+    fn get_adc_result(&self, ch_pin: u8) -> Result<u8, Box<dyn Error>> {
+        let mut adc_cs = Gpio::new()?.get(self.adc_cs)?.into_output();
+        let mut adc_do = Gpio::new()?.get(self.adc_do)?.into_input();
+        let mut adc_di = Gpio::new()?.get(self.adc_di)?.into_output();
+        let mut adc_clk = Gpio::new()?.get(self.adc_clk)?.into_output();
+
+        // 変換の開始
+        adc_cs.set_low();
+        // スタートビット
+        snd_bit(&mut adc_clk, &mut adc_di, 1);
+        // SGL
+        snd_bit(&mut adc_clk, &mut adc_di, 1);
+        // ODD
+        snd_bit(&mut adc_clk, &mut adc_di, ch_pin & 1 as u8);
+        // Select
+        snd_bit(&mut adc_clk, &mut adc_di, if ch_pin > 1 { 1 } else { 0 });
+
+        // スカされるクロック。送信する値に意味なし。
+        snd_bit(&mut adc_clk, &mut adc_di, 1);
+
+        let mut msb = 0;
+        let mut lsb;
+        // MSB-First Data
+        for _ in 0..7 {
+            msb = msb << 1 | rcv_bit(&mut adc_clk, &mut adc_do);
+        }
+        // MSB-First DataとLSB-First Dataの最下位bit
+        adc_clk.set_low();
+        thread::sleep(Duration::from_micros(2));
+        msb = msb << 1 | if adc_do.is_high() { 1 as u8 } else { 0 as u8 };
+        lsb = if adc_do.is_high() { 1 } else { 0 };
+        adc_clk.set_high();
+        // LSB-First Data
+        for i in 1..8 {
+            lsb = rcv_bit(&mut adc_clk, &mut adc_do) << i | lsb;
+        }
+        // 変換の終了
+        adc_cs.set_high();
+        if lsb == msb {
+            Ok(lsb)
+        } else {
+            Ok(0)
+        }
+    }
+}
+
+pub fn joystick() -> Result<(), Box<dyn Error>> {
+    let button = Gpio::new()?.get(GPIO22)?.into_input_pullup();
+
+    let mut x_val;
+    let mut y_val;
+    let adc = Adc0834::new(GPIO17, GPIO23, GPIO27, GPIO18);
+
+    loop {
+        x_val = adc.get_adc_result(0)?;
+        y_val = adc.get_adc_result(1)?;
+        println!(
+            "x: {}, y: {}, button: {}",
+            x_val,
+            y_val,
+            if button.is_low() {
+                "pressed"
+            } else {
+                "not pressed"
+            }
+        );
+        thread::sleep(Duration::from_millis(100));
+    }
+}
