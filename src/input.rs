@@ -295,3 +295,17 @@ pub fn joystick() -> Result<(), Box<dyn Error>> {
         thread::sleep(Duration::from_millis(100));
     }
 }
+
+pub fn photoregister() -> Result<(), Box<dyn Error>> {
+    let mut val;
+
+    let adc = Adc0834::new(GPIO17, GPIO23, GPIO27, GPIO18);
+    let mut led = Gpio::new()?.get(GPIO22)?.into_output();
+
+    loop {
+        val = adc.get_adc_result(0)?;
+        led.set_pwm_frequency(2000.0, (val as f64) / 255.0)?;
+        println!("val: {}", val);
+        thread::sleep(Duration::from_millis(100));
+    }
+}
