@@ -309,3 +309,48 @@ pub fn photoregister() -> Result<(), Box<dyn Error>> {
         thread::sleep(Duration::from_millis(100));
     }
 }
+
+pub fn thermistor() -> Result<(), Box<dyn Error>> {
+    // 	{
+    //     unsigned char analogVal;
+    // double Vr, Rt, temp, cel, Fah;
+    //     if(wiringPiSetup() == -1){ //when initialize wiring failed,print messageto screen
+    //         printf("setup wiringPi failed !");
+    //         return 1;
+    //     }
+    //     pinMode(ADC_CS,  OUTPUT);
+    //     pinMode(ADC_CLK, OUTPUT);
+    //     while(1){
+    //         analogVal = get_ADC_Result(0);
+    //         Vr = 5 * (double)(analogVal) / 255;
+    //         Rt = 10000 * (double)(Vr) / (5 - (double)(Vr));
+    //         temp = 1 / (((log(Rt/10000)) / 3950)+(1 / (273.15 + 25)));
+    //         cel = temp - 273.15;
+    //         Fah = cel * 1.8 +32;
+    //         printf("Celsius: %.2f C  Fahrenheit: %.2f F\n", cel, Fah);
+    //         delay(100);
+    //     }
+    //     return 0;
+    // }
+    use num::Float;
+
+    let mut analog_val: u8;
+    let mut vr: f64;
+    let mut rt: f64;
+    let mut temp: f64;
+    let mut cel: f64;
+    let mut fah: f64;
+
+    let adc = Adc0834::new(GPIO17, GPIO23, GPIO27, GPIO18);
+
+    loop {
+        analog_val = adc.get_adc_result(0).expect("adc failed");
+        vr = 5.0 * analog_val as f64 / 255.0;
+        rt = 10000.0 * vr / (5.0 - vr);
+        temp = 1.0 / ((Float::ln(rt / 10000.0) / 3950.0) + (1.0 / (273.15 + 25.0)));
+        cel = temp - 273.15;
+        fah = cel * 1.8 + 32.0;
+        println!("cel: {}, fah: {}", cel, fah);
+        thread::sleep(Duration::from_millis(100));
+    }
+}
