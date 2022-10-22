@@ -1,5 +1,6 @@
 use rppal::gpio::{Gpio, InputPin, OutputPin};
 use std::collections::HashSet;
+use std::f64::INFINITY;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
@@ -311,27 +312,6 @@ pub fn photoregister() -> Result<(), Box<dyn Error>> {
 }
 
 pub fn thermistor() -> Result<(), Box<dyn Error>> {
-    // 	{
-    //     unsigned char analogVal;
-    // double Vr, Rt, temp, cel, Fah;
-    //     if(wiringPiSetup() == -1){ //when initialize wiring failed,print messageto screen
-    //         printf("setup wiringPi failed !");
-    //         return 1;
-    //     }
-    //     pinMode(ADC_CS,  OUTPUT);
-    //     pinMode(ADC_CLK, OUTPUT);
-    //     while(1){
-    //         analogVal = get_ADC_Result(0);
-    //         Vr = 5 * (double)(analogVal) / 255;
-    //         Rt = 10000 * (double)(Vr) / (5 - (double)(Vr));
-    //         temp = 1 / (((log(Rt/10000)) / 3950)+(1 / (273.15 + 25)));
-    //         cel = temp - 273.15;
-    //         Fah = cel * 1.8 +32;
-    //         printf("Celsius: %.2f C  Fahrenheit: %.2f F\n", cel, Fah);
-    //         delay(100);
-    //     }
-    //     return 0;
-    // }
     use num::Float;
 
     let mut analog_val: u8;
@@ -340,6 +320,7 @@ pub fn thermistor() -> Result<(), Box<dyn Error>> {
     let mut temp: f64;
     let mut cel: f64;
     let mut fah: f64;
+    let mut last_cel: f64 = INFINITY;
 
     let adc = Adc0834::new(GPIO17, GPIO23, GPIO27, GPIO18);
 
@@ -350,7 +331,10 @@ pub fn thermistor() -> Result<(), Box<dyn Error>> {
         temp = 1.0 / ((Float::ln(rt / 10000.0) / 3950.0) + (1.0 / (273.15 + 25.0)));
         cel = temp - 273.15;
         fah = cel * 1.8 + 32.0;
-        println!("cel: {}, fah: {}", cel, fah);
+        if last_cel != cel {
+            println!("cel: {}, fah: {}", cel, fah);
+        }
+        last_cel = cel;
         thread::sleep(Duration::from_millis(100));
     }
 }
