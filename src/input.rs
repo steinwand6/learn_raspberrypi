@@ -1,4 +1,4 @@
-use rppal::gpio::{Gpio, InputPin, OutputPin};
+use rppal::gpio::{Gpio, InputPin, Level, OutputPin};
 use std::collections::HashSet;
 use std::f64::INFINITY;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -336,5 +336,71 @@ pub fn thermistor() -> Result<(), Box<dyn Error>> {
         }
         last_cel = cel;
         thread::sleep(Duration::from_millis(100));
+    }
+}
+
+struct Dht11 {
+    pin: u8,
+    max_tim: u8,
+}
+
+impl Dht11 {
+    pub fn new(pin: u8) -> Self {
+        Dht11 { pin, max_tim: 85 }
+    }
+
+    pub fn read(&self) -> Result<((i8, i8), (i8, i8)), Box<dyn Error>> {
+        let mut pin = Gpio::new()?.get(self.pin)?.into_output();
+        pin.set_high();
+        thread::sleep(Duration::from_micros(1));
+        pin.set_low();
+        thread::sleep(Duration::from_millis(18));
+        pin.set_high();
+        thread::sleep(Duration::from_micros(40));
+        drop(pin);
+
+        let pin = Gpio::new()?.get(self.pin)?.into_input();
+
+        let mut last_state: Level = Level::High;
+        let mut data: [i8; 5] = [0; 5];
+        let mut times_collect_bit = 0;
+
+        'main_loop: for i in 0..self.max_tim {
+            let mut counter = 0;
+            while pin.read() == last_state {
+                counter += 1;
+                thread::sleep(Duration::from_micros(1));
+                if counter == 255 {
+                    break 'main_loop;
+                }
+            }
+            last_state = pin.read();
+            // ignore first 3 transitions
+            if i >= 4 && i % 2 == 0 {
+                data[times_collect_bit / 8] <<= 1;
+                if counter > 50 {
+                    data[times_collect_bit / 8] |= 1;
+                }
+                times_collect_bit += 1;
+            }
+        }
+        if times_collect_bit >= 40 && data[4] == (data[0] + data[1] + data[2] + data[3]) {
+            Ok(((data[0], data[1]), (data[2], data[3])))
+        } else {
+            Err("Data not good, skip!".into())
+        }
+    }
+}
+
+pub fn dht() -> Result<(), Box<dyn Error>> {
+    let dht11 = Dht11::new(GPIO17);
+    loop {
+        match dht11.read() {
+            Ok(((h1, h2), (t1, t2))) => {
+                println!("Humidity = {}.{}%, Temperature = {}.{}*C", h1, h2, t1, t2)
+            }
+            Err(e) => println!("{}", e),
+        }
+        thread::sleep(Duration::from_millis(500));
     }
 }
