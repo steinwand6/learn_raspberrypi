@@ -1,6 +1,6 @@
 use rppal::gpio::{Gpio, InputPin, Level, OutputPin};
-use rppal::system::Error;
 use std::collections::HashSet;
+use std::error::Error;
 use std::f64::INFINITY;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -409,10 +409,36 @@ impl Dht11 {
     }
 }
 
-pub fn dht() -> Result<(), Dth11Error> {
+pub fn dht() -> Result<(), Box<dyn Error>> {
     let mut dht11 = Dht11::new(GPIO17);
     loop {
-        let ((h1, h2), (t1, t2)) = dht11.read()?;
+        let ((h1, h2), (t1, t2)) = dht11.read().unwrap();
         println!("h: {}.{}%  t: {}.{}*c", h1, h2, t1, t2);
     }
+}
+
+pub fn pir() -> Result<(), Box<dyn Error>> {
+    let pir = Gpio::new()?.get(GPIO17)?.into_input();
+    let mut red = Gpio::new()?.get(GPIO18)?.into_output();
+    let mut blue = Gpio::new()?.get(GPIO22)?.into_output();
+    let mut green = Gpio::new()?.get(GPIO27)?.into_output();
+
+    let running = Arc::new(AtomicBool::new(true));
+    let r = running.clone();
+    ctrlc::set_handler(move || {
+        r.store(false, Ordering::SeqCst);
+    })
+    .expect("Error setting Ctrl-C handler");
+    while running.load(Ordering::SeqCst) {
+        if pir.is_high() {
+            red.set_pwm_frequency(100.0, 100.0)?;
+            green.set_pwm_frequency(100.0, 100.0)?;
+            blue.set_pwm_frequency(0.0, 100.0)?;
+        } else {
+            red.set_pwm_frequency(0.0, 100.0)?;
+            green.set_pwm_frequency(0.0, 100.0)?;
+            blue.set_pwm_frequency(100.0, 100.0)?;
+        }
+    }
+    Ok(())
 }
