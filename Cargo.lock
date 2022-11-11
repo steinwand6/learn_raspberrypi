@@ -127,6 +127,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "dht11"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fa82acd8985622297d3feb1e2bf1ce177aaa1d6518df69524110410d08c7fb06"
+dependencies = [
+ "embedded-hal 0.2.7",
+]
+
+[[package]]
 name = "embedded-hal"
 version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -190,6 +199,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "ctrlc",
+ "dht11",
  "num",
  "rppal",
  "timer",

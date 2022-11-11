@@ -384,7 +384,7 @@ impl Dht11 {
                     self.wait_level(&input, Level::Low);
                     let dur = self.wait_level(&input, Level::High)?;
                     if dur > 16 {
-                        *b | 1;
+                        *b |= 1;
                     }
                 }
             }
