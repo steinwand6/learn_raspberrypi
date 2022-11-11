@@ -418,10 +418,12 @@ pub fn dht() -> Result<(), Box<dyn Error>> {
 }
 
 pub fn pir() -> Result<(), Box<dyn Error>> {
-    let pir = Gpio::new()?.get(GPIO17)?.into_input();
+    let mut pir = Gpio::new()?.get(GPIO17)?.into_input();
     let mut red = Gpio::new()?.get(GPIO18)?.into_output();
     let mut blue = Gpio::new()?.get(GPIO22)?.into_output();
     let mut green = Gpio::new()?.get(GPIO27)?.into_output();
+
+    pir.set_interrupt(rppal::gpio::Trigger::Both)?;
 
     let running = Arc::new(AtomicBool::new(true));
     let r = running.clone();
@@ -430,14 +432,21 @@ pub fn pir() -> Result<(), Box<dyn Error>> {
     })
     .expect("Error setting Ctrl-C handler");
     while running.load(Ordering::SeqCst) {
-        if pir.is_high() {
-            red.set_pwm_frequency(100.0, 100.0)?;
-            green.set_pwm_frequency(100.0, 100.0)?;
-            blue.set_pwm_frequency(0.0, 100.0)?;
-        } else {
-            red.set_pwm_frequency(0.0, 100.0)?;
-            green.set_pwm_frequency(0.0, 100.0)?;
-            blue.set_pwm_frequency(100.0, 100.0)?;
+        match pir.poll_interrupt(true, None) {
+            Ok(trigger) => match trigger {
+                Some(rppal::gpio::Level::High) => {
+                    red.set_pwm_frequency(100.0, 100.0)?;
+                    green.set_pwm_frequency(100.0, 100.0)?;
+                    blue.set_pwm_frequency(0.0, 100.0)?;
+                }
+                Some(rppal::gpio::Level::Low) => {
+                    red.set_pwm_frequency(0.0, 100.0)?;
+                    green.set_pwm_frequency(0.0, 100.0)?;
+                    blue.set_pwm_frequency(100.0, 100.0)?;
+                }
+                None => (),
+            },
+            _ => break,
         }
     }
     Ok(())
